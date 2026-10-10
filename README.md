@@ -2,6 +2,8 @@
 
 A small browser game for practising German adjective endings. It is a single HTML file with no build step and no dependencies.
 
+**Play online:** https://mhsenpc.github.io/Adjektiv-deklination/index.html
+
 Each round loads one declension table with every cell filled in except one. You pick the missing adjective ending from a dropdown, for example `dem rot[▾] Heft` → `-en`.
 
 ## Tables
@@ -16,7 +18,7 @@ Each table covers Nominativ, Akkusativ, Dativ and Genitiv, which gives 48 cells 
 
 ## How to play
 
-1. Open `adjektivdeklination.html` in a browser.
+1. Open `index.html` in a browser, or use the online version linked above.
 2. Pick the ending in the highlighted cell: `-e`, `-en`, `-em`, `-er` or `-es`. You can also press keys `1` to `5`.
 3. You see the correct form and a short rule for that table. Press `Enter` or click **Weiter** for the next round.
 
