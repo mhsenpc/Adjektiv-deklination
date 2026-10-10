@@ -1,0 +1,408 @@
+<!doctype html>
+<html lang="de"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Adjektivdeklination Trainer</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700;12..96,800&family=Literata:opsz,wght@7..72,400;7..72,600&family=JetBrains+Mono:wght@500&display=swap">
+<style>
+/* Layout: one study card — header, the full declension table with one gap, a feedback strip; stats below. Gender colours follow the German textbook convention. */
+:root {
+  --bg: #f3f5f8;
+  --surface: #ffffff;
+  --fg: #1b2230;
+  --muted: #5d6779;
+  --line: #d9dee7;
+  --accent: #2b4fd8;
+  --m: #2563c9; --m-soft: #e3edfb;
+  --f: #c4344a; --f-soft: #fbe6e9;
+  --n: #1f8a54; --n-soft: #e1f4ea;
+  --pl: #b7740b; --pl-soft: #fbf0dc;
+  --ok: #1f8a54; --ok-soft: #e1f4ea;
+  --bad: #c4344a; --bad-soft: #fbe6e9;
+  --display: "Bricolage Grotesque", "Avenir Next", system-ui, sans-serif;
+  --body: "Literata", Georgia, "Times New Roman", serif;
+  --mono: "JetBrains Mono", ui-monospace, Menlo, monospace;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #11151d; --surface: #1a2029; --fg: #e8ecf3; --muted: #9aa4b5; --line: #2d3542; --accent: #7d9bff;
+    --m: #78a8f5; --m-soft: #1c2b44; --f: #f07f8f; --f-soft: #3b1e25; --n: #5ccb90; --n-soft: #173426;
+    --pl: #f0b44f; --pl-soft: #3a2c13; --ok: #5ccb90; --ok-soft: #173426; --bad: #f07f8f; --bad-soft: #3b1e25;
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #11151d; --surface: #1a2029; --fg: #e8ecf3; --muted: #9aa4b5; --line: #2d3542; --accent: #7d9bff;
+  --m: #78a8f5; --m-soft: #1c2b44; --f: #f07f8f; --f-soft: #3b1e25; --n: #5ccb90; --n-soft: #173426;
+  --pl: #f0b44f; --pl-soft: #3a2c13; --ok: #5ccb90; --ok-soft: #173426; --bad: #f07f8f; --bad-soft: #3b1e25;
+  color-scheme: dark;
+}
+* { box-sizing: border-box; }
+[hidden] { display: none !important; }
+body { background: var(--bg); color: var(--fg); font-family: var(--body); font-size: 16px; line-height: 1.5; }
+.wrap { max-width: 980px; margin: 0 auto; padding-inline: 16px; padding-block: 28px 56px; display: flex; flex-direction: column; gap: 22px; }
+header { display: flex; flex-wrap: wrap; align-items: end; justify-content: space-between; gap: 14px; }
+h1 { font-family: var(--display); font-weight: 800; font-size: clamp(28px, 5vw, 42px); line-height: 1.05; margin: 0; letter-spacing: -0.02em; text-wrap: balance; }
+h1 .end { color: var(--accent); }
+.sub { margin: 4px 0 0; color: var(--muted); font-size: 15px; }
+.controls { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; }
+label.ctl { font-family: var(--display); font-size: 12px; text-transform: uppercase; letter-spacing: 0.08em; color: var(--muted); display: flex; flex-direction: column; gap: 4px; }
+select { font: inherit; }
+#mode { font-family: var(--display); font-size: 15px; padding: 8px 10px; border-radius: 8px; border: 1px solid var(--line); background: var(--surface); color: var(--fg); }
+.score { font-family: var(--mono); font-size: 14px; color: var(--muted); font-variant-numeric: tabular-nums; }
+.score b { color: var(--fg); }
+
+.card { background: var(--surface); border: 1px solid var(--line); border-radius: 14px; padding: 22px; display: flex; flex-direction: column; gap: 18px; box-shadow: 0 1px 0 var(--line); }
+.card-head { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 8px; align-items: baseline; }
+.eyebrow { font-family: var(--display); font-size: 12px; text-transform: uppercase; letter-spacing: 0.1em; color: var(--muted); }
+h2 { font-family: var(--display); font-weight: 700; font-size: 24px; margin: 2px 0 0; }
+.task { font-size: 15px; color: var(--muted); }
+.task b { color: var(--fg); }
+
+.tscroll { overflow-x: auto; }
+table.decl { border-collapse: separate; border-spacing: 0; width: 100%; min-width: 620px; }
+.decl th, .decl td { padding: 11px 12px; text-align: left; border-bottom: 1px solid var(--line); }
+.decl thead th { font-family: var(--display); font-weight: 700; font-size: 14px; border-bottom: 2px solid currentColor; }
+.decl thead th.c-m { color: var(--m); } .decl thead th.c-f { color: var(--f); }
+.decl thead th.c-n { color: var(--n); } .decl thead th.c-pl { color: var(--pl); }
+.decl thead th small { display: block; font-weight: 500; font-size: 11px; color: var(--muted); }
+.decl tbody th { font-family: var(--display); font-size: 13px; text-transform: uppercase; letter-spacing: 0.06em; color: var(--muted); width: 74px; }
+.decl td { font-size: 16px; white-space: nowrap; }
+.decl td .e { font-weight: 600; }
+.decl td.c-m .e { color: var(--m); } .decl td.c-f .e { color: var(--f); }
+.decl td.c-n .e { color: var(--n); } .decl td.c-pl .e { color: var(--pl); }
+.decl td.target { background: var(--bg); outline: 2px dashed var(--accent); outline-offset: -4px; border-radius: 8px; }
+.decl td.target.ok { background: var(--ok-soft); outline-color: var(--ok); outline-style: solid; }
+.decl td.target.bad { background: var(--bad-soft); outline-color: var(--bad); outline-style: solid; }
+.decl tr.hl th, .decl td.hlc { background: color-mix(in srgb, var(--accent) 6%, transparent); }
+.gap { font: 600 16px var(--body); padding: 3px 4px; margin-left: 1px; border: 1px solid var(--accent); border-radius: 6px; background: var(--surface); color: var(--fg); }
+.gap:focus-visible { outline: 3px solid color-mix(in srgb, var(--accent) 45%, transparent); }
+.none { color: var(--muted); font-style: italic; }
+
+.feedback { min-height: 58px; display: flex; flex-wrap: wrap; gap: 12px; align-items: center; justify-content: space-between; padding: 12px 14px; border-radius: 10px; background: var(--bg); }
+.feedback.ok { background: var(--ok-soft); } .feedback.bad { background: var(--bad-soft); }
+.fb-text { min-width: 0; flex: 1 1 320px; }
+.fb-text strong { font-family: var(--display); }
+.feedback.ok strong { color: var(--ok); } .feedback.bad strong { color: var(--bad); }
+.fb-rule { display: block; font-size: 14px; color: var(--muted); }
+button { font-family: var(--display); font-weight: 700; font-size: 15px; border-radius: 9px; padding: 9px 18px; cursor: pointer; border: 1px solid transparent; }
+button:focus-visible { outline: 3px solid color-mix(in srgb, var(--accent) 45%, transparent); outline-offset: 2px; }
+.primary { background: var(--accent); color: var(--surface); }
+.ghost { background: transparent; color: var(--muted); border-color: var(--line); }
+.danger { background: var(--bad); color: var(--surface); }
+kbd { font-family: var(--mono); font-size: 12px; border: 1px solid var(--line); border-radius: 4px; padding: 0 5px; color: var(--muted); }
+
+.stats-head { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: end; gap: 10px; }
+.legend { display: flex; flex-wrap: wrap; gap: 10px; font-size: 13px; color: var(--muted); align-items: center; }
+.sw { display: inline-block; width: 14px; height: 14px; border-radius: 3px; vertical-align: -2px; margin-right: 4px; border: 1px solid var(--line); }
+.grids { display: grid; grid-template-columns: repeat(auto-fit, minmax(270px, 1fr)); gap: 16px; }
+.mini h3 { font-family: var(--display); font-size: 15px; margin: 0 0 8px; }
+.mini table { border-collapse: separate; border-spacing: 3px; width: 100%; }
+.mini th { font-family: var(--display); font-size: 11px; color: var(--muted); font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; text-align: center; }
+.mini th.rowh { text-align: left; }
+.mini td { height: 44px; border-radius: 6px; text-align: center; font-family: var(--mono); font-size: 12px; font-variant-numeric: tabular-nums; border: 1px solid var(--line); }
+.mini td .r { display: block; font-size: 11px; color: var(--muted); }
+.lv0 { background: var(--surface); color: var(--muted); }
+.weak { background: var(--bad-soft); color: var(--bad); }
+.mid { background: var(--pl-soft); color: var(--pl); }
+.good { background: var(--ok-soft); color: var(--ok); }
+.weaklist { font-size: 15px; margin: 0; padding-left: 20px; }
+.weaklist li { margin: 2px 0; }
+.confirm { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; font-size: 14px; }
+.note { font-size: 13px; color: var(--muted); margin: 0; }
+@media (max-width: 520px) { .card { padding: 16px; } .decl td { font-size: 15px; } }
+@media (prefers-reduced-motion: no-preference) { .feedback, .decl td.target { transition: background .2s ease; } }
+</style>
+
+</head><body>
+<div class="wrap">
+  <header>
+    <div>
+      <h1>Adjektiv&shy;deklination<span class="end">-en</span></h1>
+      <p class="sub">Eine Tabelle, eine Lücke. Wähle die richtige Endung.</p>
+    </div>
+    <div class="controls">
+      <label class="ctl" for="mode">Tabelle
+        <select id="mode">
+          <option value="all">Alle drei (gemischt)</option>
+          <option value="def">Nach bestimmtem Artikel</option>
+          <option value="indef">Nach unbestimmtem Artikel</option>
+          <option value="poss">Nach Possessivpronomen</option>
+        </select>
+      </label>
+      <div class="score" id="score">Runde: <b>0</b>/0</div>
+    </div>
+  </header>
+
+  <section class="card" aria-live="polite">
+    <div class="card-head">
+      <div>
+        <div class="eyebrow" id="eyebrow">Tabelle</div>
+        <h2 id="tname">…</h2>
+      </div>
+      <div class="task" id="task"></div>
+    </div>
+    <div class="tscroll"><table class="decl" id="table"></table></div>
+    <div class="feedback" id="feedback">
+      <div class="fb-text" id="fbtext">Wähle die Endung im markierten Feld. Tasten <kbd>1</kbd>–<kbd>5</kbd> gehen auch.</div>
+      <button class="primary" id="next" hidden>Weiter <kbd style="color:inherit;border-color:currentColor">Enter</kbd></button>
+    </div>
+  </section>
+
+  <div><button class="ghost" id="togglestats" aria-expanded="false" aria-controls="stats">Mein Verlauf anzeigen</button></div>
+
+  <section class="card" id="stats" hidden>
+    <div class="stats-head">
+      <div>
+        <div class="eyebrow">Dein Verlauf</div>
+        <h2>Wo hakt es?</h2>
+      </div>
+      <div class="legend">
+        <span><span class="sw lv0"></span>noch nie</span>
+        <span><span class="sw weak"></span>schwach</span>
+        <span><span class="sw mid"></span>wird besser</span>
+        <span><span class="sw good"></span>sitzt</span>
+      </div>
+    </div>
+    <div class="grids" id="grids"></div>
+    <div>
+      <div class="eyebrow" style="margin-bottom:6px">Häufigste Fehler</div>
+      <ol class="weaklist" id="weaklist"></ol>
+    </div>
+    <div class="confirm" id="resetbox">
+      <button class="ghost" id="reset">Verlauf löschen</button>
+    </div>
+    <p class="note">Schwache Felder kommen öfter dran, sichere seltener. Der Verlauf bleibt in diesem Browser gespeichert.</p>
+  </section>
+</div>
+
+<script>
+(function () {
+  const ENDINGS = ['e', 'en', 'em', 'er', 'es'];
+  const CASES = [['nom', 'Nom'], ['akk', 'Akk'], ['dat', 'Dat'], ['gen', 'Gen']];
+  const COLS = ['m', 'f', 'n', 'pl'];
+  const COLNAME = { m: 'maskulin', f: 'feminin', n: 'neutral', pl: 'Plural' };
+  const CASENAME = { nom: 'Nominativ', akk: 'Akkusativ', dat: 'Dativ', gen: 'Genitiv' };
+
+  // Nouns: forms per case [nom, akk, dat, gen]
+  const NOUNS = {
+    Becher:  ['Becher', 'Becher', 'Becher', 'Bechers'],
+    BecherPl:['Becher', 'Becher', 'Bechern', 'Becher'],
+    Kamm:    ['Kamm', 'Kamm', 'Kamm', 'Kammes'],
+    Kaemme:  ['Kämme', 'Kämme', 'Kämmen', 'Kämme'],
+    Hose:    ['Hose', 'Hose', 'Hose', 'Hose'],
+    Hosen:   ['Hosen', 'Hosen', 'Hosen', 'Hosen'],
+    Heft:    ['Heft', 'Heft', 'Heft', 'Heftes'],
+  };
+
+  const TABLES = {
+    def: {
+      name: 'Nach bestimmtem Artikel',
+      heads: { m: ['der', ''], f: ['die', ''], n: ['das', ''], pl: ['die', 'Plural'] },
+      words: { m: ['blau', 'Becher'], f: ['grün', 'Hose'], n: ['rot', 'Heft'], pl: ['blau', 'BecherPl'] },
+      art: {
+        nom: ['der', 'die', 'das', 'die'], akk: ['den', 'die', 'das', 'die'],
+        dat: ['dem', 'der', 'dem', 'den'], gen: ['des', 'der', 'des', 'der'] },
+      end: {
+        nom: ['e', 'e', 'e', 'en'], akk: ['en', 'e', 'e', 'en'],
+        dat: ['en', 'en', 'en', 'en'], gen: ['en', 'en', 'en', 'en'] },
+      rule: 'Der Artikel zeigt schon Genus und Kasus. Das Adjektiv bekommt -e nur im Nominativ Singular und im Akkusativ von die/das, überall sonst -en.'
+    },
+    indef: {
+      name: 'Nach unbestimmtem Artikel',
+      heads: { m: ['ein', 'der'], f: ['eine', 'die'], n: ['ein', 'das'], pl: ['—', 'Plural, ohne Artikel'] },
+      words: { m: ['blau', 'Becher'], f: ['grün', 'Hose'], n: ['rot', 'Heft'], pl: ['grün', 'Hosen'] },
+      art: {
+        nom: ['ein', 'eine', 'ein', ''], akk: ['einen', 'eine', 'ein', ''],
+        dat: ['einem', 'einer', 'einem', ''], gen: ['eines', 'einer', 'eines', ''] },
+      end: {
+        nom: ['er', 'e', 'es', 'e'], akk: ['en', 'e', 'es', 'e'],
+        dat: ['en', 'en', 'en', 'en'], gen: ['en', 'en', 'en', 'er'] },
+      rule: 'Wo „ein“ keine Endung hat (Nom. der, Nom./Akk. das), übernimmt das Adjektiv sie: -er bzw. -es. Plural ohne Artikel: starke Endungen (-e, -e, -en, -er).'
+    },
+    poss: {
+      name: 'Nach Possessivpronomen',
+      heads: { m: ['dein', 'der'], f: ['deine', 'Singular'], n: ['dein', 'das'], pl: ['deine', 'Plural'] },
+      words: { m: ['blau', 'Kamm'], f: ['grün', 'Hose'], n: ['rot', 'Heft'], pl: ['blau', 'Kaemme'] },
+      art: {
+        nom: ['dein', 'deine', 'dein', 'deine'], akk: ['deinen', 'deine', 'dein', 'deine'],
+        dat: ['deinem', 'deiner', 'deinem', 'deinen'], gen: ['deines', 'deiner', 'deines', 'deiner'] },
+      end: {
+        nom: ['er', 'e', 'es', 'en'], akk: ['en', 'e', 'es', 'en'],
+        dat: ['en', 'en', 'en', 'en'], gen: ['en', 'en', 'en', 'en'] },
+      rule: 'Singular wie bei „ein“: -er / -es, wo „dein“ endungslos ist. Im Plural hat „deine“ eine Endung, also bekommt das Adjektiv immer -en.'
+    }
+  };
+  const TKEYS = ['def', 'indef', 'poss'];
+
+  // ---------- storage ----------
+  const KEY = 'adjdekl.v1';
+  function load() { try { const s = JSON.parse(localStorage.getItem(KEY)); if (s && s.cells) return s; } catch (e) {} return { cells: {}, mode: 'all' }; }
+  function save() { try { localStorage.setItem(KEY, JSON.stringify(state)); } catch (e) {} }
+  let state = load();
+  const cellKey = (t, c, col) => t + '|' + c + '|' + col;
+  const stat = k => state.cells[k] || (state.cells[k] = { r: 0, w: 0, box: 0, seen: 0, lastWrong: false });
+
+  // ---------- weighted pick ----------
+  const BOX_W = [6, 4, 2.2, 1.2, 0.6, 0.3];
+  let history = [];
+  let round = 0, correct = 0;
+  function weight(k) {
+    const s = state.cells[k];
+    if (!s || s.seen === 0) return 5;                 // new: fairly likely
+    let w = BOX_W[Math.min(s.box, 5)];
+    const rate = s.w / (s.r + s.w);
+    w *= 1 + 2 * rate;                                // error rate boost
+    if (s.lastWrong) w *= 1.8;
+    const idx = history.lastIndexOf(k);
+    if (idx !== -1) { const ago = history.length - idx; if (ago <= 1) w *= 0.02; else if (ago <= 3) w *= 0.3; }
+    return w;
+  }
+  function pick() {
+    const mode = state.mode || 'all';
+    const pool = [];
+    for (const t of (mode === 'all' ? TKEYS : [mode]))
+      for (const [c] of CASES) COLS.forEach(col => pool.push(cellKey(t, c, col)));
+    const ws = pool.map(weight);
+    let r = Math.random() * ws.reduce((a, b) => a + b, 0);
+    for (let i = 0; i < pool.length; i++) { r -= ws[i]; if (r <= 0) return pool[i]; }
+    return pool[pool.length - 1];
+  }
+
+  // ---------- render ----------
+  const $ = id => document.getElementById(id);
+  let current = null, answered = false;
+
+  function phraseParts(t, c, col) {
+    const T = TABLES[t], ci = COLS.indexOf(col);
+    const [adj, nounKey] = T.words[col];
+    const caseIdx = CASES.findIndex(x => x[0] === c);
+    return { art: T.art[c][ci], adj, end: T.end[c][ci], noun: NOUNS[nounKey][caseIdx] };
+  }
+  function esc(s) { return s.replace(/[&<>"]/g, ch => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[ch])); }
+
+  function renderRound() {
+    const [t, c, col] = current.split('|');
+    const T = TABLES[t];
+    $('eyebrow').textContent = 'Tabelle ' + (TKEYS.indexOf(t) + 1) + ' von 3';
+    $('tname').textContent = T.name;
+    $('task').innerHTML = 'Gesucht: <b>' + CASENAME[c] + '</b>, <b>' + COLNAME[col] + '</b>';
+    let h = '<thead><tr><th></th>';
+    COLS.forEach(k => { const [a, s] = T.heads[k]; h += '<th class="c-' + k + (k === col ? ' hlc' : '') + '">' + esc(a) + (s ? '<small>' + esc(s) + '</small>' : '') + '</th>'; });
+    h += '</tr></thead><tbody>';
+    CASES.forEach(([ck, cl]) => {
+      h += '<tr' + (ck === c ? ' class="hl"' : '') + '><th scope="row">' + cl + '</th>';
+      COLS.forEach(k => {
+        const p = phraseParts(t, ck, k);
+        const art = p.art ? esc(p.art) + ' ' : '';
+        if (ck === c && k === col) {
+          let sel = '<select class="gap" id="gap" aria-label="Endung wählen"><option value="">–?</option>';
+          ENDINGS.forEach((e, i) => sel += '<option value="' + e + '">-' + e + '</option>');
+          sel += '</select>';
+          h += '<td class="c-' + k + ' target" id="target">' + art + esc(p.adj) + sel + ' ' + esc(p.noun) + '</td>';
+        } else {
+          h += '<td class="c-' + k + (k === col ? ' hlc' : '') + '">' + art + esc(p.adj) + '<span class="e">' + p.end + '</span> ' + esc(p.noun) + '</td>';
+        }
+      });
+      h += '</tr>';
+    });
+    $('table').innerHTML = h + '</tbody>';
+    $('feedback').className = 'feedback';
+    $('fbtext').innerHTML = 'Wähle die Endung im markierten Feld. Tasten <kbd>1</kbd>–<kbd>5</kbd> gehen auch.';
+    $('next').hidden = true;
+    answered = false;
+    const gap = $('gap');
+    gap.addEventListener('change', () => { if (gap.value) check(gap.value); });
+    try { gap.focus({ preventScroll: true }); } catch (e) {}
+  }
+
+  function check(val) {
+    if (answered) return;
+    answered = true;
+    const [t, c, col] = current.split('|');
+    const p = phraseParts(t, c, col);
+    const ok = val === p.end;
+    const s = stat(current);
+    s.seen++; round++;
+    if (ok) { s.r++; s.box = Math.min(5, s.box + 1); s.lastWrong = false; correct++; }
+    else { s.w++; s.box = 0; s.lastWrong = true; }
+    save();
+    const full = (p.art ? p.art + ' ' : '') + p.adj + '<u>' + p.end + '</u> ' + p.noun;
+    const td = $('target');
+    td.classList.add(ok ? 'ok' : 'bad');
+    td.innerHTML = (p.art ? esc(p.art) + ' ' : '') + esc(p.adj) + '<span class="e">' + p.end + '</span> ' + esc(p.noun);
+    $('feedback').className = 'feedback ' + (ok ? 'ok' : 'bad');
+    $('fbtext').innerHTML = (ok ? '<strong>Richtig.</strong> ' : '<strong>Falsch.</strong> Du hattest -' + val + ', richtig ist: ')
+      + '<span>' + full + '</span><span class="fb-rule">' + TABLES[t].rule + '</span>';
+    $('next').hidden = false;
+    $('next').focus({ preventScroll: true });
+    renderScore(); renderStats();
+  }
+
+  function next() { history.push(current); if (history.length > 10) history.shift(); current = pick(); renderRound(); }
+
+  function renderScore() { $('score').innerHTML = 'Runde: <b>' + correct + '</b>/' + round + ' richtig'; }
+
+  function levelClass(s) {
+    if (!s || s.seen === 0) return 'lv0';
+    if (s.lastWrong || s.box <= 1) return 'weak';
+    if (s.box <= 3) return 'mid';
+    return 'good';
+  }
+  function renderStats() {
+    let g = '';
+    TKEYS.forEach(t => {
+      const T = TABLES[t];
+      g += '<div class="mini"><h3>' + T.name + '</h3><table><thead><tr><th></th>';
+      COLS.forEach(k => g += '<th>' + esc(T.heads[k][0] === '—' ? 'Pl.' : T.heads[k][0]) + '</th>');
+      g += '</tr></thead><tbody>';
+      CASES.forEach(([ck, cl]) => {
+        g += '<tr><th class="rowh">' + cl + '</th>';
+        COLS.forEach(k => {
+          const s = state.cells[cellKey(t, ck, k)];
+          const lbl = s && s.seen ? (s.r + '/' + (s.r + s.w)) : '·';
+          g += '<td class="' + levelClass(s) + '" title="' + CASENAME[ck] + ', ' + COLNAME[k] + '">-' + T.end[ck][COLS.indexOf(k)] + '<span class="r">' + lbl + '</span></td>';
+        });
+        g += '</tr>';
+      });
+      g += '</tbody></table></div>';
+    });
+    $('grids').innerHTML = g;
+    const weak = Object.entries(state.cells).filter(([, s]) => s.w > 0)
+      .sort((a, b) => (b[1].w / (b[1].r + b[1].w) - a[1].w / (a[1].r + a[1].w)) || b[1].w - a[1].w).slice(0, 5);
+    $('weaklist').innerHTML = weak.length ? weak.map(([k, s]) => {
+      const [t, c, col] = k.split('|'); const p = phraseParts(t, c, col);
+      return '<li>' + TABLES[t].name + ', ' + CASENAME[c] + ' ' + COLNAME[col] + ': <i>' + esc((p.art ? p.art + ' ' : '') + p.adj + p.end + ' ' + p.noun) + '</i> — ' + s.w + '× falsch</li>';
+    }).join('') : '<li class="none" style="list-style:none;margin-left:-20px">Noch keine Fehler. Weiter so.</li>';
+  }
+
+  // reset with in-page confirm
+  $('resetbox').addEventListener('click', e => {
+    const id = e.target.id;
+    if (id === 'reset') $('resetbox').innerHTML = '<span>Ganzen Verlauf löschen?</span><button class="danger" id="yes">Löschen</button><button class="ghost" id="no">Abbrechen</button>';
+    else if (id === 'yes') { state = { cells: {}, mode: state.mode }; save(); round = correct = 0; renderScore(); renderStats(); restoreReset(); }
+    else if (id === 'no') restoreReset();
+  });
+  function restoreReset() { $('resetbox').innerHTML = '<button class="ghost" id="reset">Verlauf löschen</button>'; }
+
+  $('mode').value = state.mode || 'all';
+  $('mode').addEventListener('change', e => { state.mode = e.target.value; save(); history = []; current = pick(); renderRound(); });
+  $('next').addEventListener('click', next);
+  $('togglestats').addEventListener('click', () => {
+    const box = $('stats'), show = box.hidden;
+    box.hidden = !show;
+    $('togglestats').textContent = show ? 'Verlauf ausblenden' : 'Mein Verlauf anzeigen';
+    $('togglestats').setAttribute('aria-expanded', String(show));
+    if (show) { renderStats(); box.scrollIntoView({ behavior: 'smooth', block: 'start' }); }
+  });
+  document.addEventListener('keydown', e => {
+    if (e.target && (e.target.id === 'mode' || e.target.id === 'next' || e.target.tagName === 'BUTTON')) return;
+    if (!answered && /^[1-5]$/.test(e.key)) { e.preventDefault(); const v = ENDINGS[+e.key - 1]; $('gap').value = v; check(v); }
+    else if (answered && (e.key === 'Enter' || e.key === ' ')) { e.preventDefault(); next(); }
+  });
+
+  current = pick();
+  renderRound(); renderScore(); renderStats();
+})();
+</script>
+
+</body></html>
